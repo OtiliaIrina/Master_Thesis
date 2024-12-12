@@ -1,6 +1,12 @@
 # Master_Thesis
 
-## Angular Correlation Function (ACF)
+The notebook class.ipynb is my most developped one, with classes to cresate my own packages.
+My trial notebooks are m-vs-z.ipynb (spilts a catalogue into subsamples and comuptes r0), Final-2PCF.ipynb (computes w(theta) by hand and with treecoor, and determines the galaxy bias).
+Cosmic variance is in developement to anaylse all the 4 deep fields, to compute the sample variance.
+
+
+## Theory: 
+### Angular Correlation Function (ACF)
 
 The Angular Correlation Function (ACF), a statistical tool used in cosmology to analyze the clustering of galaxies across the universe. It is a way to quantify how likely it is to find two galaxies at a particular angular separation compared to a random distribution. It reveals the non-uniform distribution of galaxies in the universe, helping us understand the large-scale structure and processes at play.
 
