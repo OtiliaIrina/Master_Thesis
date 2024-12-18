@@ -1,3 +1,14 @@
+import numpy as np
+from scipy.integrate import quad
+import scipy.integrate as integrate
+
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+
+from astropy.cosmology import FlatLambdaCDM
+from package.cosmology import Cosmology
+
+
 # class that calculates the comoving correlation length (R_0) for a subsample based on its properties
 
 class SubsampleAnalysis:
@@ -9,7 +20,8 @@ class SubsampleAnalysis:
         self.H_gamma = H_gamma
         self.c = c
 
-        # Assuming a standard cosmology
+
+        # Create a Cosmology object using the imported class
         self.cosmo = Cosmology(H0=70, Omega0=0.3)
 
     def calculate_r0(self):

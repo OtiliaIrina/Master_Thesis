@@ -1,3 +1,17 @@
+import astropy.io.fits as fits
+import numpy as np
+from scipy.integrate import quad
+import scipy.integrate as integrate
+from scipy.optimize import curve_fit
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from astropy.table import Table,join
+import os
+import matplotlib.pyplot as plt
+from astropy.cosmology import FlatLambdaCDM
+
+
+
 class BiasCalculator:
     """
     Calculates the bias parameter and its error from a w(theta) function and galaxy-galaxy correlation data.
@@ -31,19 +45,3 @@ class BiasCalculator:
 
         return bias, bias_error, popt, pcov
 
-# Usage example:
-high_sm_biases = []
-for subsample in subsamples:
-    # Create a BiasCalculator object
-    calculator = BiasCalculator(w_model, gg)
-
-    # Calculate bias and error for the subsample
-    bias, bias_error, popt, pcov = calculator.calculate_bias(subsample.info['w'])
-
-    # Print and store results
-    print(f"Subsample {i+1} SM_mean: {subsample.info['SM_mean']:.3f}")
-    print(f"Bias: {bias:.3f} +/- {bias_error:.3f}")
-
-    high_sm_biases.append([subsample.info['SM_mean'], bias, bias_error])
-
-# ... rest of your code for saving and loading data using high_sm_biases
