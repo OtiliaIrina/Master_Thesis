@@ -36,16 +36,37 @@ class CorrelationFunction:
         self.rr = treecorr.NNCorrelation(**config)
         self.dr = treecorr.NNCorrelation(**config)
         
-    #def process_rand(self):
-        #self.rr.process(self.rand) ###????maybe here problem?
 
     def process(self):
         self.dd.process(self.data)
         self.dr.process(self.data, self.rand)
         self.rr.process(self.rand)
 
+
     def calculate_w_theta(self):
         theta = np.exp(self.dd.meanlogr)
         w, varw = self.dd.calculateXi(rr=self.rr, dr=self.dr) 
         
-        return w, varw, theta , self.rr
+        return w, varw, theta ,self.rr, self.dr, self.dd
+    
+    def write_results(self, file_name):
+            self.dd.write(file_name, rr=self.rr, dr=self.dr)
+            
+            
+    def read_results(self, file_name, file_type=None):
+
+        # Read correlation function data into the `dd`, `dr`, and `rr` objects
+        self.dd.read(file_name, file_type=None)
+        self.dr.read(file_name, file_type=None)
+        self.rr.read(file_name, file_type=None)
+        
+        
+    def print_num_pairs(self):
+    
+        print("Number of pairs (per bin):")
+        print(f"DD pairs: {self.dd.npairs}")
+        print(f"DR pairs: {self.dr.npairs}")
+        print(f"RR pairs: {self.rr.npairs}")
+            
+            
+    
