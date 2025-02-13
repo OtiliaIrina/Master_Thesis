@@ -9,6 +9,8 @@ from astropy.table import Table,join
 import os
 import matplotlib.pyplot as plt
 from astropy.cosmology import FlatLambdaCDM
+import halomod as hm
+import hmf
 
 
 
@@ -19,6 +21,9 @@ class Subsample:
         self.SM_min = SM_min
         self.SM_max = SM_max
         self.info = {}  # Empty dictionary to store information
+        
+        self.nz = hm.integrate_corr.flat_z_dist( self.z_min,  self.z_max)
+
 
         # Add relevant information for R_0 calculation (e.g., delta, A, delta_z)
         self.info['delta'] = None  # Placeholder for delta
