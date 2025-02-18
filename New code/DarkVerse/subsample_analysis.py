@@ -6,7 +6,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 from astropy.cosmology import FlatLambdaCDM
-from package.cosmology import Cosmology
+from DarkVerse.cosmology import Cosmology
 
 
 # class that calculates the comoving correlation length (R_0) for a subsample based on its properties
