@@ -1,4 +1,4 @@
-
+from .correlation_function import CorrelationFunction
 import numpy as np
 from scipy.optimize import curve_fit
 import halomod as hm
@@ -13,13 +13,16 @@ class Subsample:
         self.SM_max = SM_max
         self.config = config  # Configuration for correlation function
 
-        # Mask for selecting galaxies within the subsample
+        # Compute the redshift distribution
+        self.nz = hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
+
         self.mask = self.apply(catalog)
         self.filtered_catalog = catalog[self.mask]  # Subsample of galaxies
         
         # Initialize attributes for correlation function
         self.corr_func = None
         self.power_law_params = None  # (A, gamma) from power-law fit
+        self.gg = None  # Placeholder for computed correlation functions using halomod(gg.angular_corr_matter and gg.angular_corr_gal)
 
         # Measure correlation function
         if w_theta is None or theta is None:
@@ -27,6 +30,9 @@ class Subsample:
         else:
             self.w_theta = w_theta
             self.theta = theta
+
+        # Compute the angular correlation functions
+        self.compute_gg()
 
         # Fit power-law model
         self.fit_power_law()
@@ -52,11 +58,34 @@ class Subsample:
         # Extract results
         self.w_theta, self.var_w_theta, self.theta, self.rr, self.dr, self.dd = self.corr_func.calculate_w_theta()
 
+    def compute_gg(self):
+        """
+        Computes the matter-matter and galaxy-galaxy angular correlation functions using halomod.
+        """
+        if self.theta is None:
+            raise ValueError("Theta values must be computed before calculating gg.")
+
+        theta_min = np.min(self.theta) * np.pi / 180  # Convert to radians
+        theta_max = np.max(self.theta) * np.pi / 180
+        theta_num = len(self.theta)
+        z_mean = (self.z_min + self.z_max) / 2
+
+        self.gg = hm.integrate_corr.AngularCF(
+            self.nz, self.nz,
+            theta_min=theta_min,
+            theta_max=theta_max,
+            theta_num=theta_num,
+            zmin=self.z_min,
+            zmax=self.z_max,
+            z= z_mean, 
+            p_of_z=True
+        )
+
+        # Set HOD parameters
+        self.gg.hod_params = {"M_min": 13.27, "M_1": 14.6, "alpha": 1.0}
 
     def power_law_model(self, theta, A, gamma):
-        """
-        Power-law model: w_theta = A * theta^(-gamma)
-        """
+
         return A * theta ** (-gamma)
 
     def fit_power_law(self):
@@ -81,6 +110,8 @@ class Subsample:
         - Power-law parameters (A, gamma)
         - w_theta values
         - DD, DR, RR counts
+        - Redshift distribution (nz)
+        - gg
         """
         return {
             'power_law_params': self.power_law_params,
@@ -88,5 +119,7 @@ class Subsample:
             'theta': self.theta,
             'dd_counts': self.dd.npairs if self.dd else None,
             'dr_counts': self.dr.npairs if self.dr else None,
-            'rr_counts': self.rr.npairs if self.rr else None
+            'rr_counts': self.rr.npairs if self.rr else None,
+            'nz': self.nz,  # Normalized redshift distribution
+            'gg': self.gg.angular_corr_matter if self.gg else None  # Matter correlation function
         }
