@@ -1,34 +1,33 @@
-import treecorr
+
 import numpy as np
 from scipy.optimize import curve_fit
 import halomod as hm
 
 class Subsample:
-    def __init__(self, catalog, z_min, z_max, SM_min, SM_max, w_theta=None, theta=None):
+    def __init__(self, catalog, randoms, z_min, z_max, SM_min, SM_max, config, w_theta=None, theta=None):
         self.catalog = catalog
+        self.randoms = randoms
         self.z_min = z_min
         self.z_max = z_max
         self.SM_min = SM_min
         self.SM_max = SM_max
-        self.w_theta = w_theta  # Observed angular correlation function
-        self.theta = theta  # Corresponding angle values (in degrees)
-        
+        self.config = config  # Configuration for correlation function
+
         # Mask for selecting galaxies within the subsample
         self.mask = self.apply(catalog)
-        
-        # Extract relevant data
         self.filtered_catalog = catalog[self.mask]  # Subsample of galaxies
         
         # Initialize attributes for correlation function
-        self.dd = None
-        self.dr = None
-        self.rr = None
+        self.corr_func = None
         self.power_law_params = None  # (A, gamma) from power-law fit
 
-        # Measure correlation function if data is available
-        if self.w_theta is None or self.theta is None:
+        # Measure correlation function
+        if w_theta is None or theta is None:
             self.measure_w_theta()
-        
+        else:
+            self.w_theta = w_theta
+            self.theta = theta
+
         # Fit power-law model
         self.fit_power_law()
 
@@ -42,38 +41,17 @@ class Subsample:
 
     def measure_w_theta(self):
         """
-        Computes the angular correlation function (w_theta) using TreeCorr.
-        Stores DD, DR, RR counts.
+        Computes the angular correlation function (w_theta) using CorrelationFunction class.
         """
-        config = {
-            'min_sep': 0.01,  # Minimum separation in degrees
-            'max_sep': 1.0,   # Maximum separation in degrees
-            'nbins': 10,      # Number of bins
-            'sep_units': 'degrees'
-        }
+        if len(self.filtered_catalog) == 0:
+            raise ValueError("No galaxies in the selected subsample. Adjust redshift/mass limits.")
 
-        # Generate TreeCorr catalogs
-        data_cat = treecorr.Catalog(ra=self.filtered_catalog['ra'], dec=self.filtered_catalog['dec'],
-                                    ra_units='degrees', dec_units='degrees', npatch=50)
-        
-        # Generate random catalog for comparison
-        random_cat = treecorr.Catalog(ra=np.random.uniform(0, 360, len(self.filtered_catalog)),
-                                      dec=np.random.uniform(-90, 90, len(self.filtered_catalog)),
-                                      ra_units='degrees', dec_units='degrees', npatch=50)
+        self.corr_func = CorrelationFunction(self.filtered_catalog, self.randoms, self.config)
+        self.corr_func.process()
 
-        # Create correlation function estimators
-        self.dd = treecorr.NNCorrelation(config)
-        self.dr = treecorr.NNCorrelation(config)
-        self.rr = treecorr.NNCorrelation(config)
+        # Extract results
+        self.w_theta, self.var_w_theta, self.theta, self.rr, self.dr, self.dd = self.corr_func.calculate_w_theta()
 
-        # Process the data
-        self.dd.process(data_cat)
-        self.dr.process(data_cat, random_cat)
-        self.rr.process(random_cat)
-
-        # Compute w(theta)
-        self.theta = np.exp(self.dd.meanlogr)
-        self.w_theta, _ = self.dd.calculateXi(rr=self.rr, dr=self.dr)
 
     def power_law_model(self, theta, A, gamma):
         """

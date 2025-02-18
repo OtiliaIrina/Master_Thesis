@@ -3,12 +3,11 @@ from scipy.optimize import curve_fit
 
 class BiasEstimator:
     
-    def __init__(self, gg, w_theta_list, w_theta_error_list, sum_rr_list, names, mask):
+    def __init__(self, gg, w_theta_list, w_theta_error_list, sum_rr_list, mask):
         self.gg = gg
         self.w_theta_list = w_theta_list
         self.w_theta_error_list = w_theta_error_list
         self.sum_rr_list = sum_rr_list
-        self.names = names
         self.mask = mask
         self.IC_list = self.calculate_IC_values()
     
