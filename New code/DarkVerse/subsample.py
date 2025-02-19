@@ -12,6 +12,7 @@ class Subsample:
         self.SM_min = SM_min
         self.SM_max = SM_max
         self.config = config  # Configuration for correlation function
+        self.info = {}  # Empty dictionary to store information
 
         # Compute the redshift distribution
         self.nz = hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
@@ -116,10 +117,11 @@ class Subsample:
         return {
             'power_law_params': self.power_law_params,
             'w_theta': self.w_theta,
+            'var_w_theta': self.var_w_theta, 
             'theta': self.theta,
             'dd_counts': self.dd.npairs if self.dd else None,
             'dr_counts': self.dr.npairs if self.dr else None,
             'rr_counts': self.rr.npairs if self.rr else None,
-            'nz': self.nz,  # Normalized redshift distribution
-            'gg': self.gg.angular_corr_matter if self.gg else None  # Matter correlation function
+            'nz': self.nz,  
+            'gg': self.gg 
         }
