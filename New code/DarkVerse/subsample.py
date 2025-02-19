@@ -82,8 +82,16 @@ class Subsample:
             p_of_z=True
         )
 
+
         # Set HOD parameters
         self.gg.hod_params = {"M_min": 13.27, "M_1": 14.6, "alpha": 1.0}
+
+        self.xi_g = self.gg.angular_corr_gal # galaxy-galaxy angular correlation function
+        self.xi_m = self.gg.angular_corr_matter # matter-matter angular correlation function
+
+
+        
+        return self.gg, self.xi_g, self.xi_m
 
     def power_law_model(self, theta, A, gamma):
 
@@ -123,5 +131,8 @@ class Subsample:
             'dr_counts': self.dr.npairs if self.dr else None,
             'rr_counts': self.rr.npairs if self.rr else None,
             'nz': self.nz,  
-            'gg': self.gg 
+            'gg': self.gg,
+            'xi_m':self.xi_m, # Matter-matter correlation
+            'xi_g': self.xi_g # Galaxy-galaxy correlation
+            
         }
