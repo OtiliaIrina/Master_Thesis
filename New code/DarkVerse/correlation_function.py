@@ -20,9 +20,9 @@ class CorrelationFunction:
 
         # Create TreeCorr catalogs
         self.data = treecorr.Catalog(ra=cat['ra'], dec=cat['dec'], 
-                                     ra_units='degrees', dec_units='degrees', npatch=50)
+                                     ra_units='degrees', dec_units='degrees', npatch = len(cat) // 2)
         self.rand = treecorr.Catalog(ra=randoms['ra'], dec=randoms['dec'], 
-                                     ra_units='degrees', dec_units='degrees', npatch=50)
+                                     ra_units='degrees', dec_units='degrees', npatch = len(cat) // 2)
 
         # Create TreeCorr correlation functions
         self.dd = treecorr.NNCorrelation(**config)
