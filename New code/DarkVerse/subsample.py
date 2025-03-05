@@ -58,6 +58,9 @@ class Subsample:
 
         # Extract results
         self.w_theta, self.var_w_theta, self.theta, self.rr, self.dr, self.dd = self.corr_func.calculate_w_theta()
+        
+         # Bootstrap errors
+        self.var_w_theta_bootstrap, self.covariance_w_theta_bootstrap = self.corr_func.bootstrap_w_theta(num_bootstrap=100)
 
     def compute_gg(self):
         """
@@ -126,6 +129,8 @@ class Subsample:
             'power_law_params': self.power_law_params,
             'w_theta': self.w_theta,
             'var_w_theta': self.var_w_theta, 
+            'var_w_theta_bootstrap': self.var_w_theta_bootstrap,
+            'covariance_w_theta_bootstrap': self.covariance_w_theta_bootstrap,
             'theta': self.theta,
             'dd_counts': self.dd.npairs if self.dd else None,
             'dr_counts': self.dr.npairs if self.dr else None,
