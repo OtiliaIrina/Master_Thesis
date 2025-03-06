@@ -17,8 +17,9 @@ class Subsample:
         # Compute the redshift distribution
         self.nz = hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
 
-        self.mask = self.apply(catalog)
+        self.mask = self.apply(catalog)  # Selection of the subsample
         self.filtered_catalog = catalog[self.mask]  # Subsample of galaxies
+        self.N = len(self.filtered_catalog)  # Number of galaxies in the subsample
         
         # Initialize attributes for correlation function
         self.corr_func = None
@@ -50,7 +51,7 @@ class Subsample:
         """
         Computes the angular correlation function (w_theta) using CorrelationFunction class.
         """
-        if len(self.filtered_catalog) == 0:
+        if self.N == 0:
             raise ValueError("No galaxies in the selected subsample. Adjust redshift/mass limits.")
 
         self.corr_func = CorrelationFunction(self.filtered_catalog, self.randoms, self.config)
@@ -126,6 +127,7 @@ class Subsample:
         - gg
         """
         return {
+            'N': self.N,  # Number of galaxies in the subsample
             'power_law_params': self.power_law_params,
             'w_theta': self.w_theta,
             'var_w_theta': self.var_w_theta, 
