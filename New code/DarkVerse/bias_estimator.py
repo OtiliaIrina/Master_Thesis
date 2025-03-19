@@ -95,8 +95,8 @@ class BiasEstimator:
                     sigma=errors[self.mask], 
                     absolute_sigma=True, 
                     p0=[1.0]  # Initial guess for bias
-                )
-
+                    maxfev=10000)  
+                    
                 bias = popt[0]
                 bias_error = np.sqrt(np.diag(pcov))[0]
                 
