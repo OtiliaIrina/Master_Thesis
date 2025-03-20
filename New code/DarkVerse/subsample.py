@@ -112,9 +112,16 @@ class Subsample:
         # Initial guesses for A and gamma
         initial_guess = [1.0, 0.8]
 
-        # Fit the power-law model
-        popt, _ = curve_fit(self.power_law_model, self.theta, self.w_theta, p0=initial_guess)
+        print("Theta:", self.theta)
+        print("w_theta:", self.w_theta)
+        print("Any NaNs in theta?", np.any(np.isnan(self.theta)))
+        print("Any NaNs in w_theta?", np.any(np.isnan(self.w_theta)))
+        print("Any infs in w_theta?", np.any(np.isinf(self.w_theta)))
 
+
+        # Fit the power-law model
+        popt, _ = curve_fit(self.power_law_model, self.theta, self.w_theta, p0=initial_guess,maxfev=10000)
+      
         self.power_law_params = popt  # (A, gamma)
 
     def get_results(self):
