@@ -5,6 +5,18 @@ import halomod as hm
 
 class Subsample:
     def __init__(self, catalog, randoms, z_min, z_max, SM_min, SM_max, config, w_theta=None, theta=None):
+        """
+        Initialize a subsample of galaxies with given redshift and stellar mass limits.
+        
+        Parameters:
+        - catalog: Galaxy catalog data
+        - randoms: Random catalog for correlation function
+        - z_min, z_max: Redshift range limits
+        - SM_min, SM_max: Stellar mass range limits
+        - config: Configuration for correlation function computation
+        - w_theta, theta: Optional pre-computed correlation function
+        """
+        
         self.catalog = catalog
         self.randoms = randoms
         self.z_min = z_min
@@ -14,9 +26,10 @@ class Subsample:
         self.config = config  # Configuration for correlation function
         self.info = {}  # Empty dictionary to store information
 
-        # Compute the redshift distribution
+        # Compute the redshift distribution (assuming tophat distribution)
         self.nz = hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
 
+         # Apply selection to create subsample
         self.mask = self.apply(catalog)  # Selection of the subsample
         self.filtered_catalog = catalog[self.mask]  # Subsample of galaxies
         self.N = len(self.filtered_catalog)  # Number of galaxies in the subsample
