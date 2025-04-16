@@ -4,7 +4,6 @@ from scipy.optimize import curve_fit
 import halomod as hm
 
 
-
 class Selection:
     def __init__(self, catalog, randoms, z_min, z_max, SM_min, SM_max, config, w_theta=None, theta=None):
         """
@@ -68,7 +67,7 @@ class Selection:
         if self.N == 0:
             raise ValueError("No galaxies in the selected subsample.")
 
-        self.corr_func = dv.CorrelationFunction(self.filtered_catalog, self.randoms, self.config)
+        self.corr_func = CorrelationFunction(self.filtered_catalog, self.randoms, self.config)
         self.corr_func.process()
 
         # Extract correlation function results

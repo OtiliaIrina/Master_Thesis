@@ -86,7 +86,6 @@ class BiasEstimator:
         galaxy_corr = galaxy_corr[:min_len]
         errors = errors[:min_len]
 
-        print((galaxy_corr/matter_corr)[self.mask])
     
         try:          
             popt, pcov = curve_fit(
