@@ -1,7 +1,10 @@
 from .correlation_function import CorrelationFunction
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.optimize import least_squares
+
 import halomod as hm
+
 
 
 class Selection:
@@ -153,6 +156,8 @@ class Selection:
             "alpha": alpha
         }
 
+        self.gg.update()  # Try this ?
+
         return self.gg.angular_corr_gal
 
     def fit_hod(self, theta=None, p0=None, bounds=None):
@@ -160,36 +165,74 @@ class Selection:
         Fit 3-parameter HOD model to observed correlation function using curve_fit.
 
         Parameters:
-        - theta: Angular scales to fit (None for all)
+        - theta: Angular scales to fit 
         - p0: Initial guess [logM_min, logM_1, alpha]
-        - bounds: Tuple of (min_bounds, max_bounds)
+        - bounds
 
         Returns:
-        - popt: Optimal parameters [logM_min, logM_1, alpha]
+        - popt: Parameters [logM_min, logM_1, alpha]
         - pcov: Parameter covariance matrix
         """
         if p0 is None:
             p0 = [12.5, 13.5, 1.0]
         if bounds is None:
-            bounds = ([12.0, 13.0, 0.5], [13.0, 14.0, 1.5])
+            bounds = ([11.0, 12.5, 0.3], [14.5, 15.5, 2.0]) # bounds = ([12.0, 13.0, 0.5], [13.0, 14.0, 1.5])
 
-        theta = self.theta if theta is None else theta
+        theta = self.theta if theta is None else theta   
         w = self.w_theta if theta is None else np.interp(theta, self.theta, self.w_theta)
         err = np.sqrt(self.var_w_theta_bootstrap)
 
+        # Fit only the 2-halo term (only 0.1 <= theta <= 0.4 degrees)
+        mask_theta = (theta >= 0.1) & (theta <= 0.4)
+        theta_fit = theta[mask_theta]
+        w_fit = w[mask_theta]
+        err_fit = err[mask_theta]
+
+
         def hod_wrapper(theta, logM_min, logM_1, alpha):
-            return self.hod_model(logM_min, logM_1, alpha)
+            return self.hod_model(logM_min, logM_1, alpha)[mask_theta]
 
         self.hod_params, pcov = curve_fit(
             hod_wrapper,
-            theta, w,
+            theta_fit, w_fit,
             p0=p0,
-            sigma=err,
+            sigma=err_fit,
             bounds=bounds,
             maxfev=10000
         )
 
         return self.hod_params, pcov
+
+
+        # from here trying to unstuck Mmin
+        """
+        def residuals(params):
+            logM_min, logM_1, alpha = params
+            model = self.hod_model(logM_min, logM_1, alpha)
+            return (w - model) / err
+
+        result = least_squares(
+            residuals,
+            p0,
+            bounds=bounds,
+            max_nfev=10000,
+            jac='2-point',
+            verbose=0
+        )
+
+
+        self.hod_params = result.x
+
+        pdict = {
+            "residuals": result.fun,
+            "jacobian": result.jac,
+            "cost": result.cost,
+            "success": result.success,
+            "message": result.message,
+            "nfev": result.nfev
+        }
+
+        return self.hod_params, None, pdict"""
 
     def get_results(self):
         """
