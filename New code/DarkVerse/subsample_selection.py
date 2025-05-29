@@ -129,7 +129,8 @@ class Selection:
             p_of_z=True
         )
 
-        self.gg.hod_params = {"M_min": 12.5, "M_1": 13.5, "alpha": 1.0}
+        self.gg.hod_params =  {"M_min": 12.0, "M_1": 13.0, "alpha": 1.0, "central":True} #{"M_min": 12.5, "M_1": 13.5, "alpha": 1.0}
+        
 
         self.xi_g = self.gg.angular_corr_gal
         self.xi_m = self.gg.angular_corr_matter
@@ -158,7 +159,10 @@ class Selection:
 
         self.gg.update()  # Try this ?
 
-        return self.gg.angular_corr_gal
+        """ Includ the integral constrain bias in the hod model that we fit"""
+        self.IC = np.sum(self.gg.angular_corr_gal * self.rr.npairs) / np.sum(self.rr.npairs)
+
+        return self.gg.angular_corr_gal - self.IC
 
     def fit_hod(self, theta=None, p0=None, bounds=None):
         """
@@ -173,10 +177,23 @@ class Selection:
         - popt: Parameters [logM_min, logM_1, alpha]
         - pcov: Parameter covariance matrix
         """
+
+        
+        #if p0 is None:
+           # p0 = [12.5, 13.5, 1.0]
+        #if bounds is None:
+           # bounds = ([11.0, 12.5, 0.3], [14.5, 15.5, 2.0]) # bounds = ([12.0, 13.0, 0.5], [13.0, 14.0, 1.5])
+        
+
+        """We can improve the sensitivity of the M_min parameter! 
+        Curve fit takes a tiny step to begin exploring, so we need to make its steps more meaningful.
+        We can do that by passing it a much smaller value, and then mutliplying it when using it. E.g."""
+        
         if p0 is None:
-            p0 = [12.5, 13.5, 1.0]
+            p0 = [12.5*1e-7, 13.5, 1.0]
         if bounds is None:
-            bounds = ([11.0, 12.5, 0.3], [14.5, 15.5, 2.0]) # bounds = ([12.0, 13.0, 0.5], [13.0, 14.0, 1.5])
+            bounds = ([11.0*1e-7, 12.5, 0.3], [14.5*1e-7, 15.5, 2.0]) 
+
 
         theta = self.theta if theta is None else theta   
         w = self.w_theta if theta is None else np.interp(theta, self.theta, self.w_theta)
@@ -188,9 +205,12 @@ class Selection:
         w_fit = w[mask_theta]
         err_fit = err[mask_theta]
 
+        
+        """And then multiply that big factor, 1e7, when passing it to the HOD package,
+        self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta]"""
 
         def hod_wrapper(theta, logM_min, logM_1, alpha):
-            return self.hod_model(logM_min, logM_1, alpha)[mask_theta]
+            return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]
 
         self.hod_params, pcov = curve_fit(
             hod_wrapper,
@@ -204,7 +224,7 @@ class Selection:
         return self.hod_params, pcov
 
 
-        # from here trying to unstuck Mmin
+        # trying to "unstuck" Mmin aka improve the sensitivity
         """
         def residuals(params):
             logM_min, logM_1, alpha = params
@@ -233,6 +253,60 @@ class Selection:
         }
 
         return self.hod_params, None, pdict"""
+
+    def fit_shmr_fixed_alpha(self, theta=None, p0=None, bounds=None):
+        """
+        Fit HOD model with fixed alpha=1.0 to get better constraints on M_min,
+        and compute the stellar-to-halo mass ratio (SHMR = M*/M_halo).
+    
+        Parameters:
+        - theta: Angular scales to fit 
+        - p0: Initial guess [logM_min, logM_1]
+        - bounds: Bounds for [logM_min, logM_1]
+    
+        Returns:
+        - params: Fitted parameters [logM_min, logM_1, fixed alpha]
+        - shmr: Estimated SHMR = 10^mean stellar mass / 10^M_min
+        """
+        fixed_alpha = 1.0
+    
+        if p0 is None:
+            p0 = [12.5 * 1e-7, 13.5]
+        if bounds is None:
+            bounds = ([11.0 * 1e-7, 12.5], [14.5 * 1e-7, 15.5])
+    
+        theta = self.theta if theta is None else theta
+        w = self.w_theta if theta is None else np.interp(theta, self.theta, self.w_theta)
+        err = np.sqrt(self.var_w_theta_bootstrap)
+    
+        # Use only large-scale (2-halo) part of the correlation function
+        mask_theta = (theta >= 0.1) & (theta <= 0.4)
+        theta_fit = theta[mask_theta]
+        w_fit = w[mask_theta]
+        err_fit = err[mask_theta]
+    
+        def hod_wrapper_fixed_alpha(theta_vals, logM_min, logM_1):
+            return self.hod_model(logM_min * 1e7, logM_1, fixed_alpha)[mask_theta]
+    
+        popt, _ = curve_fit(
+            hod_wrapper_fixed_alpha,
+            theta_fit, w_fit,
+            p0=p0,
+            sigma=err_fit,
+            bounds=bounds,
+            maxfev=10000
+        )
+    
+        # Store fitted params
+        logM_min_fit, logM_1_fit = popt
+        self.hod_params = [logM_min_fit * 1e7, logM_1_fit, fixed_alpha]
+    
+        # Compute SHMR = M_star / M_halo
+        mean_stellar_mass_log10 = 0.5 * (self.SM_min + self.SM_max)
+        shmr = 10**mean_stellar_mass_log10 / 10**(logM_min_fit * 1e7)
+    
+        return self.hod_params, shmr
+    
 
     def get_results(self):
         """
@@ -267,6 +341,8 @@ class Selection:
 
             # HOD model
             'hod_params': self.hod_params,
+            'shmr': ( 10**(0.5 * (self.SM_min + self.SM_max)) / 10**self.hod_params[0] if self.hod_params is not None else None)
+
 
             # Model correlations
             'nz': self.nz,
