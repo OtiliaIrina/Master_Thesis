@@ -341,7 +341,7 @@ class Selection:
 
             # HOD model
             'hod_params': self.hod_params,
-            'shmr': ( 10**(0.5 * (self.SM_min + self.SM_max)) / 10**self.hod_params[0] if self.hod_params is not None else None)
+            'shmr': ( 10**(0.5 * (self.SM_min + self.SM_max)) / 10**self.hod_params[0] if self.hod_params is not None else None),
 
 
             # Model correlations
