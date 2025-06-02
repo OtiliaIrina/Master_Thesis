@@ -208,11 +208,10 @@ class Selection:
         
         """And then multiply that big factor, 1e7, when passing it to the HOD package"""
         def hod_wrapper(theta, logM_min, logM_1, alpha):
-            mod_temp= self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
-            print(logM_min, logM_1, alpha, mod_temp[10])
-            return mod_temp
-
-            #return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
+            return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta] 
+            #mod_temp= self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
+            #print(logM_min, logM_1, alpha, mod_temp[10])
+            #return mod_temp
 
         self.hod_params, pcov = curve_fit(
             hod_wrapper,
