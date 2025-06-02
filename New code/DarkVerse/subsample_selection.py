@@ -129,7 +129,7 @@ class Selection:
             p_of_z=True
         )
 
-        self.gg.hod_params =  {"M_min": 12.0, "M_1": 13.0, "alpha": 1.0, "central":True}   #{"M_min": 12.5, "M_1": 13.5, "alpha": 1.0}
+        self.gg.hod_params =  {"M_min": 12.5, "M_1": 13.5, "alpha": 1.0, "central":True}   #{"M_min": 12.5, "M_1": 13.5, "alpha": 1.0}
         
 
         self.xi_g = self.gg.angular_corr_gal
@@ -190,9 +190,9 @@ class Selection:
         We can do that by passing it a much smaller value, and then mutliplying it when using it. E.g."""
         
         if p0 is None:
-            p0 = [12.5*1e-7, 13.5, 1.0]
+            p0 = [12.3*1e-7, 13.5, 1.0]
         if bounds is None:
-            bounds = ([11.0*1e-7, 13.0, 0.5], [14.5*1e-7, 14.0, 1.5]) 
+            bounds = ([11.0*1e-7, 12.5, 0.3], [14.5*1e-7, 15.5, 2.0]) 
         
 
 
@@ -200,8 +200,7 @@ class Selection:
         w = self.w_theta if theta is None else np.interp(theta, self.theta, self.w_theta)
         err = np.sqrt(self.var_w_theta_bootstrap)
 
-        # Fit only the 2-halo term (only 0.1 <= theta <= 0.4 degrees)
-        mask_theta = (theta >= 0.1) & (theta <= 0.4)
+        mask_theta = (theta >= 0.004) & (theta <= 0.4)
         theta_fit = theta[mask_theta]
         w_fit = w[mask_theta]
         err_fit = err[mask_theta]
@@ -209,7 +208,11 @@ class Selection:
         
         """And then multiply that big factor, 1e7, when passing it to the HOD package"""
         def hod_wrapper(theta, logM_min, logM_1, alpha):
-            return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
+            mod_temp= self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
+            print(logM_min, logM_1, alpha, mod_temp[10])
+            return mod_temp
+
+            #return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
 
         self.hod_params, pcov = curve_fit(
             hod_wrapper,
@@ -256,34 +259,7 @@ class Selection:
  
 
     
-    def plot_stellar_vs_halo_mass(self, ax=None, show=True, label=None):
-        """
-        Plot stellar mass threshold (SM_min) vs. halo mass (M_min from HOD fit).
-    
-        Parameters:
-        - ax: Optional matplotlib axis to plot on.
-        - show: Whether to display the plot immediately.
-        - label: Optional label for the data point.
-        """
-        if self.hod_params is None:
-            raise ValueError("HOD must be fit before plotting. Run `fit_hod()` or `fit_shmr_fixed_alpha()` first.")
-    
-        M_min = self.hod_params[0]
-        SM = self.SM_min
-    
-        if ax is None:
-            fig, ax = plt.subplots()
-    
-        ax.scatter(SM, M_min, color='C0', label=label or f'z=[{self.z_min},{self.z_max}]')
-        ax.set_xlabel(r'$\log_{10}(M_\star^{\mathrm{min}})\ [M_\odot]$')
-        ax.set_ylabel(r'$\log_{10}(M_{\mathrm{min}})\ [M_\odot/h]$')
-        ax.grid(True)
-    
-        if label is not None:
-            ax.legend()
-    
-        if show:
-            plt.show()
+
 
 
     def get_results(self):
@@ -319,6 +295,8 @@ class Selection:
 
             # HOD model
             'hod_params': self.hod_params,
+            # 'hod_params': self.gg.hod_params,
+
 
             # Model correlations
             'nz': self.nz,
