@@ -188,7 +188,6 @@ class Selection:
         """We can improve the sensitivity of the M_min parameter! 
         Curve fit takes a tiny step to begin exploring, so we need to make its steps more meaningful.
         We can do that by passing it a much smaller value, and then mutliplying it when using it. E.g."""
-
         
         if p0 is None:
             p0 = [12.5*1e-7, 13.5, 1.0]
@@ -209,7 +208,6 @@ class Selection:
 
         
         """And then multiply that big factor, 1e7, when passing it to the HOD package"""
-
         def hod_wrapper(theta, logM_min, logM_1, alpha):
             return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
 
