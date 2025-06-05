@@ -7,8 +7,10 @@ import halomod as hm
 
 
 
+
+
 class Selection:
-    def __init__(self, catalog, randoms, z_min, z_max, SM_min, SM_max, config, w_theta=None, theta=None):
+    def __init__(self, catalog, randoms, z_min, z_max, SM_min, SM_max, config, w_theta=None, theta=None, nz=None):
         """
         Initialize a subsample of galaxies with given redshift and stellar mass limits.
 
@@ -18,7 +20,8 @@ class Selection:
         - z_min, z_max: Redshift range limits
         - SM_min, SM_max: Stellar mass range limits
         - config: Configuration for correlation function computation
-        - w_theta, theta: Optional pre-computed correlation function
+        - w_theta, theta: Agular correlation function and angular separation
+        - nz: Redshift distribution
         """
         self.catalog = catalog
         self.randoms = randoms
@@ -29,8 +32,8 @@ class Selection:
         self.config = config
         self.info = {}  # Dictionary to store additional information
 
-        # Compute the redshift distribution
-        self.nz = hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
+        # Compute the redshift distribution (you can pass in a custom nz, falling back to flat_z_dist only if nothing is provided)
+        self.nz = nz if nz is not None else hm.integrate_corr.flat_z_dist(self.z_min, self.z_max)
 
         # Apply selection to create subsample
         self.mask = self.apply(self.catalog)
@@ -60,10 +63,9 @@ class Selection:
 
     def apply(self, data):
         """Filter catalog to select galaxies within redshift and mass limits."""
-        return (
-            (data['z'] > self.z_min) & (data['z'] <= self.z_max) &
-            (data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max)
-        )
+
+        return ((data['mode_z'] > self.z_min) & (data['mode_z'] <= self.z_max) & (data['mode_mass'] > self.SM_min) & (data['mode_mass'] <= self.SM_max))
+        #return ((data['z'] > self.z_min) & (data['z'] <= self.z_max) & (data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max))
 
     def measure_w_theta(self):
         """Compute the angular correlation function from the data."""

@@ -57,8 +57,10 @@ class Subsample:
         Filters the catalog to select galaxies within the given redshift and stellar mass range.
         Returns a boolean mask.
         """
-        return (data['z'] > self.z_min) & (data['z'] <= self.z_max) & \
-               (data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max)
+        return (data['mode_z'] > self.z_min) & (data['mode_z'] <= self.z_max) & (data['mode_mass'] > self.SM_min) & (data['mode_mass'] <= self.SM_max)
+
+        #return (data['z'] > self.z_min) & (data['z'] <= self.z_max) & \
+               #(data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max)
 
     def measure_w_theta(self):
         """
