@@ -64,8 +64,8 @@ class Selection:
     def apply(self, data):
         """Filter catalog to select galaxies within redshift and mass limits."""
 
-        return ((data['mode_z'] > self.z_min) & (data['mode_z'] <= self.z_max) & (data['mode_mass'] > self.SM_min) & (data['mode_mass'] <= self.SM_max))
-        #return ((data['z'] > self.z_min) & (data['z'] <= self.z_max) & (data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max))
+        return ((data['z'] > self.z_min) & (data['z'] <= self.z_max) & (data['SM'] > self.SM_min) & (data['SM'] <= self.SM_max))
+        #return ((data['mode_z'] > self.z_min) & (data['mode_z'] <= self.z_max) & (data['mode_mass'] > self.SM_min) & (data['mode_mass'] <= self.SM_max))
 
     def measure_w_theta(self):
         """Compute the angular correlation function from the data."""
