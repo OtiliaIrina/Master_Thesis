@@ -2,10 +2,7 @@ from .correlation_function import CorrelationFunction
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.optimize import least_squares
-
 import halomod as hm
-
-
 
 
 
@@ -91,24 +88,34 @@ class Selection:
             self.covariance_w_theta_bootstrap
         ) = self.corr_func.bootstrap_w_theta(num_bootstrap=100)
 
-    def power_law_model(self, theta, A, gamma):
+    """def power_law_model(self, theta, A, gamma):
+        return A * theta ** (-gamma)"""
+
+    def power_law_model(self, theta, A): #, gamma):
         """Power-law model for correlation function."""
-        return A * theta ** (-gamma)
+        self.IC = np.sum(A * theta ** (-0.8) * self.rr.npairs) / np.sum(self.rr.npairs) # delta is -0.8 and gamma is 1.8
+        return A * theta[self.mask_theta] ** (-0.8) - self.IC # gamma
+
+
 
     def fit_power_law(self):
         """Fit power-law model to the measured correlation function."""
         if self.w_theta is None or self.theta is None:
             raise ValueError("w_theta and theta must be computed first.")
 
-        initial_guess = [1.0, 0.8]
-        popt, _ = curve_fit(
+        initial_guess = [1.0] #, 0.8]
+        popt, pcov = curve_fit(
             self.power_law_model,
             self.theta,
-            self.w_theta,
+            self.w_theta[self.mask_theta],
+            sigma=np.sqrt(self.var_w_theta_bootstrap[self.mask_theta]),
+            absolute_sigma=True,
             p0=initial_guess,
             maxfev=10000
         )
-        self.power_law_params = popt  # (A, gamma)
+        self.power_law_params = popt, pcov  # (A, gamma)
+
+    
 
     def _init_halomod(self):
         """Initialize halo model with default parameters."""
@@ -131,7 +138,7 @@ class Selection:
             p_of_z=True
         )
 
-        self.gg.hod_params =  {"M_min": 12.5, "M_1": 13.5, "alpha": 1.0, "central":True}   #{"M_min": 12.5, "M_1": 13.5, "alpha": 1.0}
+        self.gg.hod_params =  {"M_min": 12.5, "M_1": 13.5, "alpha": 1.0, "central":True}  
         
 
         self.xi_g = self.gg.angular_corr_gal
@@ -161,7 +168,7 @@ class Selection:
 
         self.gg.update()  # Try this ?
 
-        """ Includ the integral constrain bias in the hod model that we fit"""
+        """ Include the integral constrain bias in the hod model that we fit"""
         self.IC = np.sum(self.gg.angular_corr_gal * self.rr.npairs) / np.sum(self.rr.npairs)
 
         return self.gg.angular_corr_gal - self.IC
@@ -210,10 +217,7 @@ class Selection:
         
         """And then multiply that big factor, 1e7, when passing it to the HOD package"""
         def hod_wrapper(theta, logM_min, logM_1, alpha):
-            return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta] 
-            #mod_temp= self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] #self.hod_model(logM_min, logM_1, alpha)[mask_theta]  # 
-            #print(logM_min, logM_1, alpha, mod_temp[10])
-            #return mod_temp
+            return self.hod_model(logM_min*1e7, logM_1, alpha)[mask_theta] 
 
         self.hod_params, pcov = curve_fit(
             hod_wrapper,
@@ -275,9 +279,9 @@ class Selection:
         - Model correlation functions
         """
         return {
-            'N': self.N,
-            'z_range': (self.z_min, self.z_max),
-            'SM_range': (self.SM_min, self.SM_max),
+            'N': self.N, # number of objects in that sample
+            'z_range': (self.z_min, self.z_max), # redshift range
+            'SM_range': (self.SM_min, self.SM_max), # stellar mass range
 
             # Correlation function measurements
             'w_theta': self.w_theta,
