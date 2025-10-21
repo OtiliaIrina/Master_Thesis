@@ -54,6 +54,7 @@ class Selection:
 
         # Initialize with default HOD (no fitting yet)
         self._init_halomod()
+        
 
         # Fit power-law model
         self.fit_power_law()
@@ -102,7 +103,10 @@ class Selection:
         """Fit power-law model to the measured correlation function."""
         if self.w_theta is None or self.theta is None:
             raise ValueError("w_theta and theta must be computed first.")
-
+            # Define mask here if it doesn’t exist yet
+        if not hasattr(self, "mask_theta"):
+            self.mask_theta = (self.theta >= 0.004) & (self.theta <= 0.4)
+        
         initial_guess = [1.0] #, 0.8]
         popt, pcov = curve_fit(
             self.power_law_model,
